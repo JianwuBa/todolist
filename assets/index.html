@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .wrap {
+        width: 800px;
+        margin: 0 auto;
+        border: 1px solid #333;
+        padding: 15px;
+    }
+
+    h1 {
+        text-align: center;
+        margin-top: 100px;
+        margin-bottom: 10px;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    ul li {
+        margin-top: 10px;
+    }
+
+    ul li b {
+        cursor: move;
+        margin-right: 20px;
+    }
+
+    .patchVal {
+        margin-right: 15px;
+        display: none;
+    }
+
+    header {
+        height: 50px;
+        background: rgba(47, 47, 47, 0.98);
+        position: fixed;
+        width: 100%;
+        left: 0;
+        top: 0;
+    }
+
+    header .container {
+        width: 600px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 100%;
+    }
+
+    header .tit {
+        line-height: 50px;
+        color: #DDD;
+        font-size: 24px;
+        cursor: pointer;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    header #todoText {
+        height: 24px;
+        text-indent: 10px;
+        border-radius: 5px;
+        box-shadow: 0 1px 0 rgb(255 255 255 / 24%), 0 1px 6px rgb(0 0 0 / 45%) inset;
+        border: none;
+        padding: 1px 2px;
+        width: 364px;
+    }
+
+    section {
+        width: 600px;
+        padding: 0 10px;
+        padding-top: 80px;
+        margin: 0 auto;
+    }
+
+    .status {
+        width: 100%;
+    }
+
+    .status .title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 20px 0;
+    }
+
+    .status .title #down {
+        padding: 0 5px;
+        height: 20px;
+        border-radius: 20px;
+        background: #E6E6FA;
+        line-height: 22px;
+        text-align: center;
+        color: #666;
+    }
+
+    .status .title #undown {
+        padding: 0 5px;
+        height: 20px;
+        border-radius: 20px;
+        background: #E6E6FA;
+        line-height: 22px;
+        text-align: center;
+        color: #666;
+    }
+
+    body {
+        background: #CDCDCD;
+    }
+
+    .todo-items {
+        height: 32px;
+        line-height: 32px;
+        background: #fff;
+        position: relative;
+        margin-bottom: 10px;
+        padding: 0 45px;
+        border-radius: 3px;
+        border-left: 5px solid #629A9C;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 7%);
+    }
+
+    .delete-btn {
+        position: absolute;
+        top: 2px;
+        right: 5px;
+        display: inline-block;
+        width: 14px;
+        height: 12px;
+        border-radius: 14px;
+        border: 6px double #FFF;
+        background: #CCC;
+        line-height: 14px;
+        text-align: center;
+        color: #FFF;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .todo-status {
+        position: absolute;
+        top: 5px;
+        left: 10px;
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        margin: 0;
+        padding: 0;
+    }
+</style>
+
+<body>
+    <header>
+        <div class="container">
+            <h1 class="tit">ToDoList</h1>
+            <div>
+                <input type="text" id="todoText">
+            </div>
+        </div>
+    </header>
+    <section>
+        <div class="status">
+            <h3 class="title">
+                <p class="text">正在进行</p>
+                <p id="undown"></p>
+            </h3>
+            <ul id="untodolists" class="todo-box"></ul>
+        </div>
+        <div class="status">
+            <h3 class="title">
+                <p class="text">已经完成</p>
+                <p id="down"></p>
+            </h3>
+            <ul id="todolists" class="todo-box"></ul>
+        </div>
+    </section>
+
+
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/jquery-ui.min.js"></script>
+    <script>
+        function loadTodos() {
+            $.get("/todolist", function (data) {
+                //console.log(data.data)
+                $("#todolists").empty();
+                $("#untodolists").empty();
+                var down = 0;
+                var undown = 0;
+                for (var i = 0; i < data.data.length; i++) {
+                    //var domLi = $(`<li>${data.data[i].title}</li>`)
+                    //$("#todolists").append(domLi)
+                    new AddTodos(data.data[i])
+                    if (data.data[i].done == 0) {
+                        undown++;
+                    } else {
+                        down++;
+                    }
+
+                    $("#down").html(down)
+                    $("#undown").html(undown)
+                }
+            })
+        }
+        //初始化加载一次
+        loadTodos();
+
+        $("#todoText").on("keydown", function (event) {
+            if (event.keyCode == 13) {
+                if (!$("#todoText").val()) {
+                    alert("内容不能为空");
+                    return;
+                }
+                $.post("/todolist", {
+                    "title": $("#todoText").val()
+                }, function (data) {
+                    if (data.status == "success") {
+                        //alert("增加成功");
+                        loadTodos();
+                        $("#todoText").val("");
+                    }
+                })
+            }
+        })
+
+
+        function AddTodos(item) {
+            var done = item.done == "1" ? "checked" : ""
+            //console.log(done)
+            this.item = $(
+                `<li class="todo-items" data-id=${item.id}><input type="checkbox" ${done}  class="todo-status"><b  data-id=${item.id}>${item.title}</b><input type="text" value=${item.title} class="patchVal"><a data-id=${item.id} class="delete-btn">-</a></li>`
+            )
+
+            if (done == "checked") {
+                $("#todolists").append(this.item)
+            } else {
+                $("#untodolists").append(this.item)
+            }
+
+        }
+        //代理事件 删除
+        $(".todo-box").delegate(".delete-btn", "click", function () {
+            $.ajax({
+                "url": "/todolist",
+                "type": "delete",
+                "data": {
+                    "id": $(this).data("id")
+                },
+                "success": function (data) {
+                    if (data.status == "success") {
+                        //alert("删除成功");
+                        loadTodos();
+                    }
+                },
+                "error": function () {
+
+                }
+            })
+        })
+        //修改
+        $(".todo-box").delegate("b", "click", function () {
+            $(this).hide();
+            $(this).siblings().show();
+        })
+        $(".todo-box").delegate(".patchVal", "blur", function () {
+            $(this).hide();
+            $(this).siblings().show();
+            var id = $(this).siblings("b").data("id");
+            console.log(id)
+            $.ajax({
+                "url": "/todolist",
+                "type": "PATCH",
+                "data": {
+                    "id": id,
+                    "key": "title",
+                    "value": $(this).val()
+                },
+                "success": function (data) {
+                    if (data.status == "success") {
+                        loadTodos();
+                    }
+                },
+                "error": function () {
+
+                }
+            })
+        })
+
+        $(".todo-box").delegate(".todo-status", "change", function (event) {
+            var done = event.target.checked;
+            console.log(done)
+            var id = $(this).siblings("b").data("id");
+            $.ajax({
+                "url": "/todolist",
+                "type": "PATCH",
+                "data": {
+                    "id": id,
+                    "key": "done",
+                    "value": done ? '1' : '0'
+                },
+                "success": function () {
+                    loadTodos();
+                }
+            })
+        })
+        //拖拽
+        var sIdx = 0;
+        var eIdx = 0;
+        //jquery ui sortable 方法
+        $("#untodolists").sortable({
+            "start": function (event, ui) {
+                sIdx = ui.item.index()
+            },
+            "stop": function (event, ui) {
+                eIdx = ui.item.index()
+                $.ajax({
+                    "type": "move",
+                    "url": "/todolist",
+                    "data": {
+                        "sIdx": sIdx,
+                        "eIdx": eIdx
+                    },
+                    "success": function (data) {
+                        if (data.status == "success") {
+                            console.log("拖拽成功")
+                        }
+                    }
+                })
+            }
+        })
+    </script>
+</body>
+
+</html>
