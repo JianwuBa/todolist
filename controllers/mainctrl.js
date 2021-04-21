@@ -1,7 +1,9 @@
 var todos = require("../models/todo")
 var formidable = require("formidable");
+// 查询，找出所有的已办和未办的清单
 exports.getTodo = function (req,res) {
     todos.allTodu(function (data) {
+        // 将得到的数据返回给前端
         res.json({
             "status":"success",
             "data":data

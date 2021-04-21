@@ -251,6 +251,7 @@
 
         }
         //代理事件 删除
+        // 使用事件代理去解决动态节点动态上树的问题，因为初始化页面的时候li标签是得不到的
         $(".todo-box").delegate(".delete-btn", "click", function () {
             $.ajax({
                 "url": "/todolist",
